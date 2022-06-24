@@ -1,4 +1,4 @@
-package repository
+package models
 
 import (
 	"errors"
@@ -11,8 +11,8 @@ type EmpMapTree struct {
 	root *EmployeeMap
 }
 
-func NewEmpMapTree(emp *EmployeeMap) *EmpMapTree {
-	return &EmpMapTree{root: emp}
+func NewEmpMapTree() *EmpMapTree {
+	return &EmpMapTree{root: NewEmployeeMap(NewEmployee("admin", "", Admin))}
 }
 
 func (e EmpMapTree) String() string {

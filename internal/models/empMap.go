@@ -1,4 +1,4 @@
-package repository
+package models
 
 import (
 	"bytes"
@@ -6,18 +6,17 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/BON4/employees/internal/models"
 	kvStore "github.com/BON4/employees/internal/store"
 )
 
 type EmployeeMap struct {
 	//Addition fields
 	// ...
-	Payload models.Employee
+	Payload Employee
 	Ords    map[string]*EmployeeMap
 }
 
-func NewEmployeeMap(payload models.Employee, ords ...(*EmployeeMap)) *EmployeeMap {
+func NewEmployeeMap(payload Employee, ords ...(*EmployeeMap)) *EmployeeMap {
 	emp := &EmployeeMap{Payload: payload, Ords: make(map[string]*EmployeeMap, len(ords))}
 	for _, v := range ords {
 		emp.Ords[v.Payload.UUID] = v

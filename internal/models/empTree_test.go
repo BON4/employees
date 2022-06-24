@@ -1,9 +1,8 @@
-package repository
+package models
 
 import (
 	"testing"
 
-	"github.com/BON4/employees/internal/models"
 	kvStore "github.com/BON4/employees/internal/store"
 )
 
@@ -15,17 +14,17 @@ func TestMain(m *testing.M) {
 }
 
 func createDumbEmplMap() *EmpMapTree {
-	return NewEmpMapTree(NewEmployeeMap(models.NewEmployee("admin", "", models.Admin),
+	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "", Admin),
 		[]*EmployeeMap{
-			NewEmployeeMap(models.NewEmployee("1", "", models.Boss),
-				NewEmployeeMap(models.NewEmployee("4", "", models.Boss),
-					NewEmployeeMap(models.NewEmployee("9", "", models.Regular))),
-				NewEmployeeMap(models.NewEmployee("5", "", models.Regular))),
-			NewEmployeeMap(models.NewEmployee("2", "", models.Boss),
-				NewEmployeeMap(models.NewEmployee("6", "", models.Regular)),
-				NewEmployeeMap(models.NewEmployee("7", "", models.Regular))),
-			NewEmployeeMap(models.NewEmployee("3", "", models.Boss),
-				NewEmployeeMap(models.NewEmployee("8", "", models.Regular)))}...))
+			NewEmployeeMap(NewEmployee("1", "", Boss),
+				NewEmployeeMap(NewEmployee("4", "", Boss),
+					NewEmployeeMap(NewEmployee("9", "", Regular))),
+				NewEmployeeMap(NewEmployee("5", "", Regular))),
+			NewEmployeeMap(NewEmployee("2", "", Boss),
+				NewEmployeeMap(NewEmployee("6", "", Regular)),
+				NewEmployeeMap(NewEmployee("7", "", Regular))),
+			NewEmployeeMap(NewEmployee("3", "", Boss),
+				NewEmployeeMap(NewEmployee("8", "", Regular)))}...))}
 }
 
 func TestEmpMapNew(t *testing.T) {
@@ -41,7 +40,7 @@ func TestMapTreeLoadSave(t *testing.T) {
 		t.Error(err)
 	}
 
-	loadedTree := NewEmpMapTree(NewEmployeeMap(models.NewEmployee("admin", "", models.Admin)))
+	loadedTree := NewEmpMapTree()
 	if err := loadedTree.Load(mapStore); err != nil {
 		t.Error(err)
 	}
@@ -96,7 +95,7 @@ func TestEmpMapInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := empTree.Insert(fEmp.Payload.UUID, NewEmployeeMap(models.NewEmployee("8", "", models.Regular))); err != nil {
+	if err := empTree.Insert(fEmp.Payload.UUID, NewEmployeeMap(NewEmployee("8", "", Regular))); err != nil {
 		t.Error(err)
 	}
 
