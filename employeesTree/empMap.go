@@ -6,26 +6,27 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/BON4/employees/models"
 	kvStore "github.com/BON4/employees/store"
 )
 
 type EmployeeMap struct {
 	//Addition fields
 	// ...
-	UUID string
-	Ords map[string]*EmployeeMap
+	Payload models.Employee
+	Ords    map[string]*EmployeeMap
 }
 
-func NewEmployeeMap(UUID string, ords ...(*EmployeeMap)) *EmployeeMap {
-	emp := &EmployeeMap{UUID: UUID, Ords: make(map[string]*EmployeeMap, len(ords))}
+func NewEmployeeMap(payload models.Employee, ords ...(*EmployeeMap)) *EmployeeMap {
+	emp := &EmployeeMap{Payload: payload, Ords: make(map[string]*EmployeeMap, len(ords))}
 	for _, v := range ords {
-		emp.Ords[v.UUID] = v
+		emp.Ords[v.Payload.UUID] = v
 	}
 	return emp
 }
 
 func (e *EmployeeMap) insert(newTree *EmployeeMap) {
-	e.Ords[newTree.UUID] = newTree
+	e.Ords[newTree.Payload.UUID] = newTree
 }
 
 func (e *EmployeeMap) delete(UUID string) {
@@ -33,9 +34,9 @@ func (e *EmployeeMap) delete(UUID string) {
 }
 
 func (e EmployeeMap) copy() EmployeeMap {
-	cEmp := *NewEmployeeMap(e.UUID)
-	for k, _ := range e.Ords {
-		cEmp.Ords[k] = NewEmployeeMap(k)
+	cEmp := *NewEmployeeMap(e.Payload)
+	for k, v := range e.Ords {
+		cEmp.Ords[k] = NewEmployeeMap(v.Payload)
 	}
 	return cEmp
 }
@@ -43,7 +44,7 @@ func (e EmployeeMap) copy() EmployeeMap {
 func (e *EmployeeMap) IsExists(empUUID string) bool {
 	var helper func(empUUID string, fe *EmployeeMap) bool
 	helper = func(empUUID string, fe *EmployeeMap) bool {
-		if fe.UUID == empUUID {
+		if fe.Payload.UUID == empUUID {
 			return true
 		}
 
@@ -61,7 +62,7 @@ func (e *EmployeeMap) IsExists(empUUID string) bool {
 func (e EmployeeMap) String() string {
 	var helper func(e *EmployeeMap, offset int) string
 	helper = func(e *EmployeeMap, offset int) string {
-		accum := strings.Repeat("-", offset) + e.UUID
+		accum := strings.Repeat("-", offset) + e.Payload.UUID + " : " + e.Payload.Username
 		for _, c := range e.Ords {
 			accum += "\n" + helper(c, offset+1)
 		}
@@ -75,8 +76,8 @@ func (e EmployeeMap) marshal() ([]byte, error) {
 	enc := gob.NewEncoder(b)
 
 	newE := make(map[string]*EmployeeMap, len(e.Ords))
-	for k, _ := range e.Ords {
-		newE[k] = &EmployeeMap{}
+	for k, v := range e.Ords {
+		newE[k] = &EmployeeMap{Payload: v.Payload}
 	}
 
 	e.Ords = newE
@@ -94,14 +95,14 @@ func (e *EmployeeMap) unmarshal(bData []byte) error {
 func (e EmployeeMap) writeToStore(s kvStore.Store) error {
 	eGob, err := e.marshal()
 	if err == nil {
-		return s.Set(e.UUID, eGob)
+		return s.Set(e.Payload.UUID, eGob)
 	}
 	return err
 }
 
 func (e *EmployeeMap) readFromStore(s kvStore.Store) error {
 	bData := make([]byte, 0, 512)
-	ok, err := s.Get(e.UUID, &bData)
+	ok, err := s.Get(e.Payload.UUID, &bData)
 
 	if ok {
 		return e.unmarshal(bData)
@@ -111,7 +112,7 @@ func (e *EmployeeMap) readFromStore(s kvStore.Store) error {
 }
 
 func buildMapFromStore(e *EmployeeMap, s kvStore.Store) error {
-	if len(e.UUID) == 0 {
+	if len(e.Payload.UUID) == 0 {
 		return errors.New("employeeMap does not exists")
 	}
 
@@ -119,8 +120,8 @@ func buildMapFromStore(e *EmployeeMap, s kvStore.Store) error {
 		return err
 	}
 
-	for k, _ := range e.Ords {
-		newE := NewEmployeeMap(k)
+	for k, v := range e.Ords {
+		newE := NewEmployeeMap(v.Payload)
 		if err := buildMapFromStore(newE, s); err != nil {
 			return err
 		}

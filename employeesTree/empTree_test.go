@@ -3,6 +3,7 @@ package employeesTree
 import (
 	"testing"
 
+	"github.com/BON4/employees/models"
 	kvStore "github.com/BON4/employees/store"
 )
 
@@ -14,15 +15,17 @@ func TestMain(m *testing.M) {
 }
 
 func createDumbEmplMap() *EmpMapTree {
-	return NewEmpMapTree(NewEmployeeMap("admin", []*EmployeeMap{NewEmployeeMap("1",
-		NewEmployeeMap("4",
-			NewEmployeeMap("9")),
-		NewEmployeeMap("5")),
-		NewEmployeeMap("2",
-			NewEmployeeMap("6"),
-			NewEmployeeMap("7")),
-		NewEmployeeMap("3",
-			NewEmployeeMap("8"))}...))
+	return NewEmpMapTree(NewEmployeeMap(models.NewEmployee("admin", "", models.Admin),
+		[]*EmployeeMap{
+			NewEmployeeMap(models.NewEmployee("1", "", models.Boss),
+				NewEmployeeMap(models.NewEmployee("4", "", models.Boss),
+					NewEmployeeMap(models.NewEmployee("9", "", models.Regular))),
+				NewEmployeeMap(models.NewEmployee("5", "", models.Regular))),
+			NewEmployeeMap(models.NewEmployee("2", "", models.Boss),
+				NewEmployeeMap(models.NewEmployee("6", "", models.Regular)),
+				NewEmployeeMap(models.NewEmployee("7", "", models.Regular))),
+			NewEmployeeMap(models.NewEmployee("3", "", models.Boss),
+				NewEmployeeMap(models.NewEmployee("8", "", models.Regular)))}...))
 }
 
 func TestEmpMapNew(t *testing.T) {
@@ -38,13 +41,14 @@ func TestMapTreeLoadSave(t *testing.T) {
 		t.Error(err)
 	}
 
-	loadedTree := NewEmpMapTree(NewEmployeeMap("admin"))
+	loadedTree := NewEmpMapTree(NewEmployeeMap(models.NewEmployee("admin", "", models.Admin)))
 	if err := loadedTree.Load(mapStore); err != nil {
 		t.Error(err)
 	}
 
 	if len(emps.String()) != len(loadedTree.String()) {
 		t.Errorf("Trees dont match:")
+		t.Logf("Trees len: %d - %d", len(emps.String()), len(loadedTree.String()))
 	}
 }
 
@@ -56,11 +60,23 @@ func TestEmpMapDelete(t *testing.T) {
 	}
 	t.Logf("\n%s", empTree)
 
-	if err := empTree.Delete("8"); err != nil {
+	fEmp, err := empTree.FindByUsername("8")
+
+	if err != nil {
 		t.Error(err)
 	}
 
-	if err := empTree.Delete("admin"); err == nil {
+	if err := empTree.Delete(fEmp.Payload.UUID); err != nil {
+		t.Error(err)
+	}
+
+	fAdmin, err := empTree.FindByUsername("admin")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := empTree.Delete(fAdmin.Payload.UUID); err == nil {
 		t.Error("Cant delete admin")
 	}
 
@@ -74,7 +90,13 @@ func TestEmpMapInsert(t *testing.T) {
 		t.Error(err)
 	}
 
-	if err := empTree.Insert("admin", NewEmployeeMap("10")); err != nil {
+	fEmp, err := empTree.FindByUsername("admin")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if err := empTree.Insert(fEmp.Payload.UUID, NewEmployeeMap(models.NewEmployee("8", "", models.Regular))); err != nil {
 		t.Error(err)
 	}
 
@@ -88,7 +110,7 @@ func TestEmpMapFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	fEmp, err := empTree.Find("1")
+	fEmp, err := empTree.FindByUsername("1")
 
 	if err != nil {
 		t.Error(err)
