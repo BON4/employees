@@ -1,6 +1,10 @@
 package employeesTree
 
-import "errors"
+import (
+	"errors"
+
+	kvStore "github.com/BON4/employees/store"
+)
 
 //TODO UPTODATE SAVING
 type EmpMapTree struct {
@@ -85,10 +89,10 @@ func (e *EmpMapTree) Delete(childUUID string) error {
 	return nil
 }
 
-func (e *EmpMapTree) Load(s Store) error {
+func (e *EmpMapTree) Load(s kvStore.Store) error {
 	return buildMapFromStore(e.root, s)
 }
 
-func (e *EmpMapTree) Save(s Store) error {
+func (e *EmpMapTree) Save(s kvStore.Store) error {
 	return dumpMapToStore(e.root, s)
 }

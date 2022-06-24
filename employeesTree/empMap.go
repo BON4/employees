@@ -5,6 +5,8 @@ import (
 	"encoding/gob"
 	"errors"
 	"strings"
+
+	kvStore "github.com/BON4/employees/store"
 )
 
 type EmployeeMap struct {
@@ -89,7 +91,7 @@ func (e *EmployeeMap) unmarshal(bData []byte) error {
 	return err
 }
 
-func (e EmployeeMap) writeToStore(s Store) error {
+func (e EmployeeMap) writeToStore(s kvStore.Store) error {
 	eGob, err := e.marshal()
 	if err == nil {
 		return s.Set(e.UUID, eGob)
@@ -97,7 +99,7 @@ func (e EmployeeMap) writeToStore(s Store) error {
 	return err
 }
 
-func (e *EmployeeMap) readFromStore(s Store) error {
+func (e *EmployeeMap) readFromStore(s kvStore.Store) error {
 	bData := make([]byte, 0, 512)
 	ok, err := s.Get(e.UUID, &bData)
 
@@ -108,7 +110,7 @@ func (e *EmployeeMap) readFromStore(s Store) error {
 	return err
 }
 
-func buildMapFromStore(e *EmployeeMap, s Store) error {
+func buildMapFromStore(e *EmployeeMap, s kvStore.Store) error {
 	if len(e.UUID) == 0 {
 		return errors.New("employeeMap does not exists")
 	}
@@ -128,7 +130,7 @@ func buildMapFromStore(e *EmployeeMap, s Store) error {
 	return nil
 }
 
-func dumpMapToStore(e *EmployeeMap, s Store) error {
+func dumpMapToStore(e *EmployeeMap, s kvStore.Store) error {
 	if err := e.writeToStore(s); err != nil {
 		return err
 	}

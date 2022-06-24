@@ -2,12 +2,14 @@ package employeesTree
 
 import (
 	"testing"
+
+	kvStore "github.com/BON4/employees/store"
 )
 
-var mapStore Store
+var mapStore kvStore.Store
 
 func TestMain(m *testing.M) {
-	mapStore = NewMapStore()
+	mapStore = kvStore.NewMapStore()
 	m.Run()
 }
 
