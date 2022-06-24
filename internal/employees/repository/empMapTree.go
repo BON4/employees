@@ -1,9 +1,9 @@
-package employeesTree
+package repository
 
 import (
 	"errors"
 
-	kvStore "github.com/BON4/employees/store"
+	kvStore "github.com/BON4/employees/internal/store"
 )
 
 //TODO UPTODATE SAVING

@@ -1,10 +1,10 @@
-package employeesTree
+package repository
 
 import (
 	"testing"
 
-	"github.com/BON4/employees/models"
-	kvStore "github.com/BON4/employees/store"
+	"github.com/BON4/employees/internal/models"
+	kvStore "github.com/BON4/employees/internal/store"
 )
 
 var mapStore kvStore.Store
