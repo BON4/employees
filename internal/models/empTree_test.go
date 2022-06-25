@@ -1,6 +1,9 @@
 package models
 
 import (
+	"errors"
+	"fmt"
+	"math/rand"
 	"testing"
 
 	kvStore "github.com/BON4/employees/internal/store"
@@ -25,6 +28,24 @@ func createDumbEmplMap() *EmpMapTree {
 				NewEmployeeMap(NewEmployee("7", "", Regular))),
 			NewEmployeeMap(NewEmployee("3", "", Boss),
 				NewEmployeeMap(NewEmployee("8", "", Regular)))}...))}
+}
+
+func fuzzDumbEmplTree(n int, e *EmpMapTree) error {
+	counter := 9
+	for i := 0; i < n; i++ {
+		v := fmt.Sprintf("%d", rand.Intn(counter)+1)
+		emp, err := e.FindByUsername(v)
+		if err == nil {
+			err = e.Insert(emp.Payload.UUID, NewEmployee(fmt.Sprintf("%d", counter), "", Regular))
+			if err != nil {
+				return errors.New(fmt.Sprintf("%s:%s", err.Error(), emp.Payload.UUID))
+			}
+			counter++
+		} else {
+			i--
+		}
+	}
+	return nil
 }
 
 func TestEmpMapNew(t *testing.T) {
@@ -117,4 +138,35 @@ func TestEmpMapFind(t *testing.T) {
 	}
 
 	t.Logf("\n%s", fEmp)
+}
+
+func TestEmpMapTraverse(t *testing.T) {
+	empTree := createDumbEmplMap()
+	err := empTree.Save(mapStore)
+	if err != nil {
+		t.Error(err)
+	}
+
+	empTree.root.Traverse(func(emp Employee) {
+		t.Logf("%+v\n", emp)
+	})
+}
+
+func TestJsonifyEmployeeTree(t *testing.T) {
+	tree := createDumbEmplMap()
+	t.Log(tree.root.Json())
+}
+
+func BenchmarkJsonifyEmployeeTree(b *testing.B) {
+	b.Log(b.N)
+	b.StopTimer()
+	tree := createDumbEmplMap()
+	err := fuzzDumbEmplTree(300, tree)
+	if err != nil {
+		b.Error(err)
+	}
+	b.StartTimer()
+	for i := 0; i < b.N; i++ {
+		tree.root.Json()
+	}
 }

@@ -12,19 +12,19 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-type Role int
+type Role string
 
 const (
-	Admin Role = iota
-	Boss
-	Regular
+	Admin   = "admin"
+	Boss    = "boss"
+	Regular = "regular"
 )
 
 type Employee struct {
 	Role     Role
 	UUID     string
 	Username string
-	Password string
+	Password string `json:"-"`
 }
 
 func NewEmployee(username, password string, role Role) Employee {

@@ -100,6 +100,10 @@ func (e *EmpMapTree) Insert(uuid string, newEmp Employee) error {
 
 	p.insert(NewEmployeeMap(newEmp))
 
+	if p.Payload.Role == Regular {
+		p.Payload.Role = Boss
+	}
+
 	return nil
 }
 

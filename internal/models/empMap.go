@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/gob"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 type EmployeeMap struct {
 	//Addition fields
 	// ...
-	Payload Employee
+	Payload Employee `json:"Employee"`
 	Ords    map[string]*EmployeeMap
 }
 
@@ -119,6 +120,15 @@ func (e *EmployeeMap) readFromStore(s kvStore.Store) error {
 	}
 
 	return err
+}
+
+func (e *EmployeeMap) Json() (string, error) {
+	b, err := json.Marshal(e)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
 }
 
 func buildMapFromStore(e *EmployeeMap, s kvStore.Store) error {
