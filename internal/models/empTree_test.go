@@ -94,8 +94,9 @@ func TestEmpMapInsert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	e := NewEmployee("8", "", Regular)
 
-	if err := empTree.Insert(fEmp.Payload.UUID, NewEmployeeMap(NewEmployee("8", "", Regular))); err != nil {
+	if err := empTree.Insert(fEmp.Payload.UUID, e); err != nil {
 		t.Error(err)
 	}
 

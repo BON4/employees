@@ -70,6 +70,17 @@ func (e EmployeeMap) String() string {
 	return helper(&e, 0)
 }
 
+func (e EmployeeMap) Traverse(f func(emp Employee)) {
+	var helper func(e *EmployeeMap, f func(emp Employee))
+	helper = func(e *EmployeeMap, f func(emp Employee)) {
+		f(e.Payload)
+		for _, v := range e.Ords {
+			helper(v, f)
+		}
+	}
+	helper(&e, f)
+}
+
 func (e EmployeeMap) marshal() ([]byte, error) {
 	b := bytes.NewBuffer([]byte{})
 	enc := gob.NewEncoder(b)

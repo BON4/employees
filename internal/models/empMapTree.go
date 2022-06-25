@@ -88,8 +88,8 @@ func (e *EmpMapTree) FindByUsername(Username string) (*EmployeeMap, error) {
 }
 
 //TODO (Maby) if parent of inserted was at Role Regular change it to Boss
-func (e *EmpMapTree) Insert(uuid string, newEmp *EmployeeMap) error {
-	if e.root.IsExists(newEmp.Payload.UUID) {
+func (e *EmpMapTree) Insert(uuid string, newEmp Employee) error {
+	if e.root.IsExists(newEmp.UUID) {
 		return errors.New("employee with this UUID already exists")
 	}
 
@@ -98,7 +98,7 @@ func (e *EmpMapTree) Insert(uuid string, newEmp *EmployeeMap) error {
 		return err
 	}
 
-	p.insert(newEmp)
+	p.insert(NewEmployeeMap(newEmp))
 
 	return nil
 }
