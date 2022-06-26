@@ -8,9 +8,9 @@ import (
 
 type EmpRepository interface {
 	Insert(ctx context.Context, empID string, emp models.Employee) error
+	Move(ctx context.Context, empID1 string, empID2 string) error
 	GetByID(ctx context.Context, empID string) (models.Employee, error)
 	Delete(ctx context.Context, empID string) error
-	//TODO Cretare proper imutable algorithm for traverse
-	//Or method To HTML/String tree
+	Json(ctx context.Context, empID string) (string, error)
 	Traverse(ctx context.Context, emp *models.Employee, f func(emp models.Employee)) error
 }

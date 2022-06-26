@@ -12,22 +12,21 @@ import (
 var mapStore kvStore.Store
 
 func TestMain(m *testing.M) {
-	mapStore = kvStore.NewMapStore()
+	mapStore = kvStore.NewStore()
 	m.Run()
 }
 
 func createDumbEmplMap() *EmpMapTree {
 	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "", Admin),
-		[]*EmployeeMap{
-			NewEmployeeMap(NewEmployee("1", "", Boss),
-				NewEmployeeMap(NewEmployee("4", "", Boss),
-					NewEmployeeMap(NewEmployee("9", "", Regular))),
-				NewEmployeeMap(NewEmployee("5", "", Regular))),
-			NewEmployeeMap(NewEmployee("2", "", Boss),
-				NewEmployeeMap(NewEmployee("6", "", Regular)),
-				NewEmployeeMap(NewEmployee("7", "", Regular))),
-			NewEmployeeMap(NewEmployee("3", "", Boss),
-				NewEmployeeMap(NewEmployee("8", "", Regular)))}...))}
+		NewEmployeeMap(NewEmployee("1", "", Boss),
+			NewEmployeeMap(NewEmployee("4", "", Boss),
+				NewEmployeeMap(NewEmployee("9", "", Regular))),
+			NewEmployeeMap(NewEmployee("5", "", Regular))),
+		NewEmployeeMap(NewEmployee("2", "", Boss),
+			NewEmployeeMap(NewEmployee("6", "", Regular)),
+			NewEmployeeMap(NewEmployee("7", "", Regular))),
+		NewEmployeeMap(NewEmployee("3", "", Boss),
+			NewEmployeeMap(NewEmployee("8", "", Regular)))))}
 }
 
 func fuzzDumbEmplTree(n int, e *EmpMapTree) error {
@@ -69,6 +68,8 @@ func TestMapTreeLoadSave(t *testing.T) {
 	if len(emps.String()) != len(loadedTree.String()) {
 		t.Errorf("Trees dont match:")
 		t.Logf("Trees len: %d - %d", len(emps.String()), len(loadedTree.String()))
+		t.Logf("Saved Tree:\n%s", emps)
+		t.Logf("Loaded Tree:\n%s", loadedTree)
 	}
 }
 
@@ -161,7 +162,7 @@ func BenchmarkJsonifyEmployeeTree(b *testing.B) {
 	b.Log(b.N)
 	b.StopTimer()
 	tree := createDumbEmplMap()
-	err := fuzzDumbEmplTree(300, tree)
+	err := fuzzDumbEmplTree(10, tree)
 	if err != nil {
 		b.Error(err)
 	}

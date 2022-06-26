@@ -6,19 +6,22 @@ import (
 	"encoding/json"
 	"errors"
 	"strings"
+	"sync"
 
 	kvStore "github.com/BON4/employees/internal/store"
 )
 
+//TODO Change to SyncMap or RWMutex
 type EmployeeMap struct {
 	//Addition fields
 	// ...
-	Payload Employee `json:"Employee"`
-	Ords    map[string]*EmployeeMap
+	rwMu    *sync.RWMutex
+	Payload Employee                `json:"Employee"`
+	Ords    map[string]*EmployeeMap `json:"Oredenates"`
 }
 
 func NewEmployeeMap(payload Employee, ords ...(*EmployeeMap)) *EmployeeMap {
-	emp := &EmployeeMap{Payload: payload, Ords: make(map[string]*EmployeeMap, len(ords))}
+	emp := &EmployeeMap{Payload: payload, Ords: make(map[string]*EmployeeMap, len(ords)), rwMu: &sync.RWMutex{}}
 	for _, v := range ords {
 		emp.Ords[v.Payload.UUID] = v
 	}
@@ -26,14 +29,20 @@ func NewEmployeeMap(payload Employee, ords ...(*EmployeeMap)) *EmployeeMap {
 }
 
 func (e *EmployeeMap) insert(newTree *EmployeeMap) {
+	e.rwMu.Lock()
 	e.Ords[newTree.Payload.UUID] = newTree
+	e.rwMu.Unlock()
 }
 
 func (e *EmployeeMap) delete(UUID string) {
+	e.rwMu.Lock()
 	delete(e.Ords, UUID)
+	e.rwMu.Unlock()
 }
 
 func (e EmployeeMap) copy() EmployeeMap {
+	e.rwMu.Lock()
+	defer e.rwMu.Unlock()
 	cEmp := *NewEmployeeMap(e.Payload)
 	for k, v := range e.Ords {
 		cEmp.Ords[k] = NewEmployeeMap(v.Payload)
@@ -56,6 +65,10 @@ func (e *EmployeeMap) IsExists(empUUID string) bool {
 
 		return false
 	}
+
+	e.rwMu.Lock()
+	defer e.rwMu.Unlock()
+
 	return helper(empUUID, e)
 }
 
@@ -68,6 +81,10 @@ func (e EmployeeMap) String() string {
 		}
 		return accum
 	}
+
+	e.rwMu.Lock()
+	defer e.rwMu.Unlock()
+
 	return helper(&e, 0)
 }
 
@@ -79,6 +96,10 @@ func (e EmployeeMap) Traverse(f func(emp Employee)) {
 			helper(v, f)
 		}
 	}
+
+	e.rwMu.Lock()
+	defer e.rwMu.Unlock()
+
 	helper(&e, f)
 }
 
@@ -123,6 +144,9 @@ func (e *EmployeeMap) readFromStore(s kvStore.Store) error {
 }
 
 func (e *EmployeeMap) Json() (string, error) {
+	e.rwMu.Lock()
+	defer e.rwMu.Unlock()
+
 	b, err := json.Marshal(e)
 	if err != nil {
 		return "", err

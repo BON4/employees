@@ -12,7 +12,20 @@ type EmpMapTree struct {
 }
 
 func NewEmpMapTree() *EmpMapTree {
-	return &EmpMapTree{root: NewEmployeeMap(NewEmployee("admin", "", Admin))}
+	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "", Admin)))}
+}
+
+func NewEmpMapTreeDEBUG() *EmpMapTree {
+	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "", Admin),
+		NewEmployeeMap(NewEmployee("1", "", Boss),
+			NewEmployeeMap(NewEmployee("4", "", Boss),
+				NewEmployeeMap(NewEmployee("9", "", Regular))),
+			NewEmployeeMap(NewEmployee("5", "", Regular))),
+		NewEmployeeMap(NewEmployee("2", "", Boss),
+			NewEmployeeMap(NewEmployee("6", "", Regular)),
+			NewEmployeeMap(NewEmployee("7", "", Regular))),
+		NewEmployeeMap(NewEmployee("3", "", Boss),
+			NewEmployeeMap(NewEmployee("8", "", Regular)))))}
 }
 
 func (e EmpMapTree) String() string {

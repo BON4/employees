@@ -23,6 +23,25 @@ func (t *TreeRepo) Delete(ctx context.Context, empID string) error {
 	return t.repo.Save(t.store)
 }
 
+func (t *TreeRepo) Move(ctx context.Context, empID string, toID string) error {
+	emp, err := t.repo.FindById(empID)
+	if err != nil {
+		return err
+	}
+
+	err = t.repo.Delete(emp.Payload.UUID)
+	if err != nil {
+		return err
+	}
+
+	err = t.repo.Insert(toID, emp.Payload)
+	if err != nil {
+		return err
+	}
+
+	return t.repo.Save(t.store)
+}
+
 // GetByID implements employees.EmpRepository
 func (t *TreeRepo) GetByID(ctx context.Context, empID string) (models.Employee, error) {
 	emp, err := t.repo.FindById(empID)
@@ -55,8 +74,23 @@ func (t *TreeRepo) Traverse(ctx context.Context, emp *models.Employee, f func(em
 	return nil
 }
 
+func (t *TreeRepo) Json(ctx context.Context, empID string) (string, error) {
+	emp, err := t.repo.FindById(empID)
+	if err != nil {
+		return "", err
+	}
+
+	return emp.Json()
+}
+
 func NewTreeRepo(s kvStore.Store) (employees.EmpRepository, error) {
 	repo := models.NewEmpMapTree()
 	err := repo.Load(s)
 	return &TreeRepo{store: s, repo: repo}, err
+}
+
+func NewTreeRepoDEBUG(s kvStore.Store) (employees.EmpRepository, error) {
+	repo := models.NewEmpMapTreeDEBUG()
+	//err := repo.Load(s)
+	return &TreeRepo{store: s, repo: repo}, nil
 }
