@@ -3,6 +3,7 @@ module github.com/BON4/employees
 go 1.18
 
 require (
+	github.com/golang-jwt/jwt/v4 v4.4.2 // indirect
 	github.com/labstack/echo/v4 v4.7.2 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect

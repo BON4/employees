@@ -1,7 +1,7 @@
 package server
 
 import (
-	empHttp "github.com/BON4/employees/internal/delivery/http"
+	empHttp "github.com/BON4/employees/internal/employees/delivery/http"
 	"github.com/BON4/employees/internal/employees/repository"
 	"github.com/BON4/employees/internal/store"
 	echo "github.com/labstack/echo/v4"
