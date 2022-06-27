@@ -16,16 +16,16 @@ func NewEmpMapTree() *EmpMapTree {
 }
 
 func NewEmpMapTreeDEBUG() *EmpMapTree {
-	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "", Admin),
-		NewEmployeeMap(NewEmployee("1", "", Boss),
-			NewEmployeeMap(NewEmployee("4", "", Boss),
-				NewEmployeeMap(NewEmployee("9", "", Regular))),
-			NewEmployeeMap(NewEmployee("5", "", Regular))),
-		NewEmployeeMap(NewEmployee("2", "", Boss),
-			NewEmployeeMap(NewEmployee("6", "", Regular)),
-			NewEmployeeMap(NewEmployee("7", "", Regular))),
-		NewEmployeeMap(NewEmployee("3", "", Boss),
-			NewEmployeeMap(NewEmployee("8", "", Regular)))))}
+	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "adminadmin", Admin),
+		NewEmployeeMap(NewEmployee("1", "1boss", Boss),
+			NewEmployeeMap(NewEmployee("4", "4boss", Boss),
+				NewEmployeeMap(NewEmployee("9", "9regular", Regular))),
+			NewEmployeeMap(NewEmployee("5", "5regular", Regular))),
+		NewEmployeeMap(NewEmployee("2", "2boss", Boss),
+			NewEmployeeMap(NewEmployee("6", "6reglar", Regular)),
+			NewEmployeeMap(NewEmployee("7", "7regular", Regular))),
+		NewEmployeeMap(NewEmployee("3", "3boss", Boss),
+			NewEmployeeMap(NewEmployee("8", "8regular", Regular)))))}
 }
 
 func (e EmpMapTree) String() string {
@@ -104,6 +104,15 @@ func (e *EmpMapTree) FindByUsername(Username string) (*EmployeeMap, error) {
 func (e *EmpMapTree) Insert(uuid string, newEmp Employee) error {
 	if e.root.IsExists(newEmp.UUID) {
 		return errors.New("employee with this UUID already exists")
+	}
+
+	if err := e.root.Traverse(func(emp Employee) error {
+		if emp.Username == newEmp.Username {
+			return errors.New("employee with this username already exists")
+		}
+		return nil
+	}); err != nil {
+		return err
 	}
 
 	p, err := e.FindById(uuid)

@@ -88,19 +88,26 @@ func (e EmployeeMap) String() string {
 	return helper(&e, 0)
 }
 
-func (e EmployeeMap) Traverse(f func(emp Employee)) {
-	var helper func(e *EmployeeMap, f func(emp Employee))
-	helper = func(e *EmployeeMap, f func(emp Employee)) {
-		f(e.Payload)
-		for _, v := range e.Ords {
-			helper(v, f)
+func (e EmployeeMap) Traverse(f func(emp Employee) error) error {
+	var helper func(e *EmployeeMap, f func(emp Employee) error) error
+	helper = func(e *EmployeeMap, f func(emp Employee) error) error {
+		if err := f(e.Payload); err != nil {
+			return err
 		}
+
+		for _, v := range e.Ords {
+			if err := helper(v, f); err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 
 	e.rwMu.Lock()
 	defer e.rwMu.Unlock()
 
-	helper(&e, f)
+	return helper(&e, f)
 }
 
 func (e EmployeeMap) marshal() ([]byte, error) {

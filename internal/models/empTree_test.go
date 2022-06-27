@@ -116,10 +116,16 @@ func TestEmpMapInsert(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	e := NewEmployee("8", "", Regular)
+	e := NewEmployee("10", "", Regular)
 
 	if err := empTree.Insert(fEmp.Payload.UUID, e); err != nil {
 		t.Error(err)
+	}
+
+	e = NewEmployee("8", "", Regular)
+
+	if err := empTree.Insert(fEmp.Payload.UUID, e); err == nil {
+		t.Error("Shuld be error")
 	}
 
 	t.Logf("\n%s", empTree)
@@ -132,7 +138,13 @@ func TestEmpMapFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	fEmp, err := empTree.FindByUsername("1")
+	fEmp, err := empTree.FindByUsername("4")
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	fEmp, err = empTree.FindById(fEmp.Payload.UUID)
 
 	if err != nil {
 		t.Error(err)
@@ -148,9 +160,21 @@ func TestEmpMapTraverse(t *testing.T) {
 		t.Error(err)
 	}
 
-	empTree.root.Traverse(func(emp Employee) {
+	if err := empTree.root.Traverse(func(emp Employee) error {
 		t.Logf("%+v\n", emp)
-	})
+		return nil
+	}); err != nil {
+		t.Error(err)
+	}
+
+	if err := empTree.root.Traverse(func(emp Employee) error {
+		if emp.Username == "4" {
+			return errors.New("employee with this username already exists")
+		}
+		return nil
+	}); err == nil {
+		t.Error("Shoud be error")
+	}
 }
 
 func TestJsonifyEmployeeTree(t *testing.T) {

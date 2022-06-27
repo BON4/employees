@@ -1,6 +1,8 @@
 package models
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
