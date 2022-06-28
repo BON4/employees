@@ -3,7 +3,7 @@ package models
 import (
 	"errors"
 
-	kvStore "github.com/BON4/employees/internal/store"
+	kvStore "github.com/BON4/employees/pkg/store"
 )
 
 //TODO UPTODATE SAVING
@@ -100,9 +100,42 @@ func (e *EmpMapTree) FindByUsername(Username string) (*EmployeeMap, error) {
 	return nil, errors.New("employee does not exists")
 }
 
+func (e *EmpMapTree) Move(empUUID, toUUID string) error {
+	empMapTo, err := e.FindById(toUUID)
+	if err != nil {
+		return err
+	}
+
+	empMap, err := e.FindById(empUUID)
+	if err != nil {
+		return err
+	}
+
+	empMapParrent, err := e.findParent(empUUID)
+	if err != nil {
+		return err
+	}
+
+	empMapParrent.delete(empUUID)
+
+	if empMapParrent.len() == 0 {
+		if empMapParrent.Payload.Role == Boss {
+			empMapParrent.Payload.Role = Regular
+		}
+	}
+
+	empMapTo.insert(empMap)
+
+	if empMapTo.Payload.Role == Regular {
+		empMapTo.Payload.Role = Boss
+	}
+
+	return nil
+}
+
 //TODO (Maby) if parent of inserted was at Role Regular change it to Boss
 func (e *EmpMapTree) Insert(uuid string, newEmp Employee) error {
-	if e.root.IsExists(newEmp.UUID) {
+	if _, ok := e.root.IsExists(newEmp.UUID); ok {
 		return errors.New("employee with this UUID already exists")
 	}
 

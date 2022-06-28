@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	kvStore "github.com/BON4/employees/internal/store"
+	kvStore "github.com/BON4/employees/pkg/store"
 )
 
 //TODO Change to SyncMap or RWMutex
@@ -40,6 +40,12 @@ func (e *EmployeeMap) delete(UUID string) {
 	e.rwMu.Unlock()
 }
 
+func (e *EmployeeMap) len() int {
+	e.rwMu.Lock()
+	defer e.rwMu.Unlock()
+	return len(e.Ords)
+}
+
 func (e EmployeeMap) copy() EmployeeMap {
 	e.rwMu.Lock()
 	defer e.rwMu.Unlock()
@@ -50,20 +56,21 @@ func (e EmployeeMap) copy() EmployeeMap {
 	return cEmp
 }
 
-func (e *EmployeeMap) IsExists(empUUID string) bool {
-	var helper func(empUUID string, fe *EmployeeMap) bool
-	helper = func(empUUID string, fe *EmployeeMap) bool {
+//IsExists - checks if provided emp with this id is exists within of scoupe of current emp
+func (e *EmployeeMap) IsExists(empUUID string) (Employee, bool) {
+	var helper func(empUUID string, fe *EmployeeMap) (Employee, bool)
+	helper = func(empUUID string, fe *EmployeeMap) (Employee, bool) {
 		if fe.Payload.UUID == empUUID {
-			return true
+			return fe.Payload, true
 		}
 
 		for _, v := range fe.Ords {
-			if helper(empUUID, v) {
-				return true
+			if v, ok := helper(empUUID, v); ok {
+				return v, true
 			}
 		}
 
-		return false
+		return Employee{}, false
 	}
 
 	e.rwMu.Lock()

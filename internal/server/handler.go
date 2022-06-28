@@ -1,25 +1,49 @@
 package server
 
 import (
+	"time"
+
+	authHttp "github.com/BON4/employees/internal/authJWT/delivery/http"
+	jwtMiddleware "github.com/BON4/employees/internal/authJWT/delivery/http/middleware"
+	jwtRepository "github.com/BON4/employees/internal/authJWT/repository"
 	empHttp "github.com/BON4/employees/internal/employees/delivery/http"
-	"github.com/BON4/employees/internal/employees/repository"
-	"github.com/BON4/employees/internal/store"
+	treeRepository "github.com/BON4/employees/internal/employees/repository"
+	"github.com/BON4/employees/internal/models"
+	"github.com/BON4/employees/pkg/jwtService"
+	"github.com/BON4/employees/pkg/store"
 	echo "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 )
 
-func (s *Server) MapHandlers(e *echo.Echo) error {
-	store := store.NewStore()
+var ACCESS_KEY []byte = []byte("123456789")
+var REFRESH_KEY []byte = []byte("123456789")
+var ACCESS_TIME time.Duration = time.Hour
+var REFRESH_TIME time.Duration = time.Hour * 6
 
-	rep, err := repository.NewTreeRepoDEBUG(store)
-	if err != nil {
-		return err
-	}
+func (s *Server) MapHandlers(e *echo.Echo) error {
+
+	e.Use(middleware.Logger())
+
+	store := store.NewStore()
+	eT := models.NewEmpMapTreeDEBUG()
+	rep := treeRepository.NewTreeRepo(eT, store)
+
+	jwtManagerConf := jwtService.NewJWTConfig(ACCESS_KEY, REFRESH_KEY, ACCESS_TIME, REFRESH_TIME)
+	jwtManager := jwtService.NewJWTService(jwtManagerConf)
+	jwtRep := jwtRepository.NewJWTRepo(rep, store, jwtManager)
+
+	jwtMid := jwtMiddleware.NewJwtMiddleware(jwtManager, s.logger)
 
 	v1 := e.Group("/v1")
 
 	empHandler := empHttp.NewEmployeeHandler(rep, s.logger)
-	empGroup := v1.Group("/emp")
-	empHttp.NewEmployeeRoutes(empGroup, *empHandler)
+	empGroup := v1.Group("/emp", jwtMid.AuthCheck(), jwtMid.AccessCheck())
+	//empGroup := v1.Group("/emp")
+	empHttp.NewEmployeeRoutes(empGroup, empHandler)
+
+	authHandler := authHttp.NewAuthHandler(jwtRep, s.logger)
+	authGroup := v1.Group("/auth")
+	authHttp.NewAuthRoutes(authGroup, authHandler)
 
 	return nil
 }

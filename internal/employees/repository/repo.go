@@ -5,7 +5,7 @@ import (
 
 	"github.com/BON4/employees/internal/employees"
 	"github.com/BON4/employees/internal/models"
-	kvStore "github.com/BON4/employees/internal/store"
+	kvStore "github.com/BON4/employees/pkg/store"
 )
 
 type TreeRepo struct {
@@ -23,28 +23,36 @@ func (t *TreeRepo) Delete(ctx context.Context, empID string) error {
 	return t.repo.Save(t.store)
 }
 
-func (t *TreeRepo) Move(ctx context.Context, empID string, toID string) error {
-	emp, err := t.repo.FindById(empID)
+func (t *TreeRepo) Move(ctx context.Context, bossID, empID, toID string) error {
+
+	emp, err := t.repo.FindById(bossID)
 	if err != nil {
 		return err
 	}
 
-	err = t.repo.Delete(emp.Payload.UUID)
-	if err != nil {
-		return err
+	if _, ok := emp.IsExists(empID); ok {
+		if err := t.repo.Move(empID, toID); err != nil {
+			return err
+		}
+
+		return t.repo.Save(t.store)
 	}
 
-	err = t.repo.Insert(toID, emp.Payload)
-	if err != nil {
-		return err
-	}
-
-	return t.repo.Save(t.store)
+	return nil
 }
 
 // GetByID implements employees.EmpRepository
 func (t *TreeRepo) GetByID(ctx context.Context, empID string) (models.Employee, error) {
 	emp, err := t.repo.FindById(empID)
+	if err != nil {
+		return models.Employee{}, err
+	}
+
+	return emp.Payload, nil
+}
+
+func (t *TreeRepo) GetByUsername(ctx context.Context, empUsername string) (models.Employee, error) {
+	emp, err := t.repo.FindByUsername(empUsername)
 	if err != nil {
 		return models.Employee{}, err
 	}
@@ -63,15 +71,14 @@ func (t *TreeRepo) Insert(ctx context.Context, empID string, emp models.Employee
 }
 
 // Traverse implements employees.EmpRepository
-func (t *TreeRepo) Traverse(ctx context.Context, emp *models.Employee, f func(emp models.Employee)) error {
+func (t *TreeRepo) Traverse(ctx context.Context, emp *models.Employee, f func(emp models.Employee) error) error {
 	empMap, err := t.repo.FindById(emp.UUID)
 	if err != nil {
 		return err
 	}
 
 	//TODO somehow implement ctx
-	empMap.Traverse(f)
-	return nil
+	return empMap.Traverse(f)
 }
 
 func (t *TreeRepo) Json(ctx context.Context, empID string) (string, error) {
@@ -83,14 +90,6 @@ func (t *TreeRepo) Json(ctx context.Context, empID string) (string, error) {
 	return emp.Json()
 }
 
-func NewTreeRepo(s kvStore.Store) (employees.EmpRepository, error) {
-	repo := models.NewEmpMapTree()
-	err := repo.Load(s)
-	return &TreeRepo{store: s, repo: repo}, err
-}
-
-func NewTreeRepoDEBUG(s kvStore.Store) (employees.EmpRepository, error) {
-	repo := models.NewEmpMapTreeDEBUG()
-	//err := repo.Load(s)
-	return &TreeRepo{store: s, repo: repo}, nil
+func NewTreeRepo(mapTree *models.EmpMapTree, s kvStore.Store) employees.EmpRepository {
+	return &TreeRepo{store: s, repo: mapTree}
 }

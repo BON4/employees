@@ -1,6 +1,7 @@
 package http
 
 import (
+	"encoding/json"
 	"log"
 
 	"github.com/BON4/employees/internal/employees"
@@ -17,10 +18,28 @@ func (e employeeHandler) List() echo.HandlerFunc {
 		uuid := c.Param("uuid")
 		jsonEmpTree, err := e.repo.Json(c.Request().Context(), uuid)
 		if err != nil {
-			return echo.ErrNotFound
+			return err
 		}
 		e.logger.Printf("%s\n", jsonEmpTree)
 		return c.JSONBlob(200, []byte(jsonEmpTree))
+	}
+}
+
+func (e employeeHandler) Move() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		uuid := c.Param("uuid")
+
+		josnForm := MoveForm{}
+
+		if err := json.NewDecoder(c.Request().Body).Decode(&josnForm); err != nil {
+			return err
+		}
+
+		if err := e.repo.Move(c.Request().Context(), uuid, josnForm.FromUUID, josnForm.ToUUID); err != nil {
+			return err
+		}
+
+		return c.JSON(200, []byte(""))
 	}
 }
 

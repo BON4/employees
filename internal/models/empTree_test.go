@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"testing"
 
-	kvStore "github.com/BON4/employees/internal/store"
+	kvStore "github.com/BON4/employees/pkg/store"
 )
 
 var mapStore kvStore.Store
