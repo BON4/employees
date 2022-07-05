@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"errors"
 
 	kvStore "github.com/BON4/employees/pkg/store"
@@ -12,7 +13,7 @@ type EmpMapTree struct {
 }
 
 func NewEmpMapTree() *EmpMapTree {
-	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "", Admin)))}
+	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "adminadmin", Admin)))}
 }
 
 func NewEmpMapTreeDEBUG() *EmpMapTree {
@@ -172,10 +173,10 @@ func (e *EmpMapTree) Delete(childUUID string) error {
 	return nil
 }
 
-func (e *EmpMapTree) Load(s kvStore.Store) error {
-	return buildMapFromStore(e.root, s)
+func (e *EmpMapTree) Load(ctx context.Context, s kvStore.Store) error {
+	return buildMapFromStore(ctx, e.root, s)
 }
 
-func (e *EmpMapTree) Save(s kvStore.Store) error {
-	return dumpMapToStore(e.root, s)
+func (e *EmpMapTree) Save(ctx context.Context, s kvStore.Store) error {
+	return dumpMapToStore(ctx, e.root, s)
 }

@@ -20,7 +20,6 @@ func (e employeeHandler) List() echo.HandlerFunc {
 		if err != nil {
 			return err
 		}
-		e.logger.Printf("%s\n", jsonEmpTree)
 		return c.JSONBlob(200, []byte(jsonEmpTree))
 	}
 }

@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/BON4/employees/pkg/store"
+	"github.com/go-redis/redis/v8"
 	echo "github.com/labstack/echo/v4"
 )
 
@@ -23,13 +25,29 @@ const (
 type Server struct {
 	e      *echo.Echo
 	logger *log.Logger
+	st     store.Store
 }
 
 func NewServer() (*Server, error) {
 	e := echo.New()
+
+	opt, err := redis.ParseURL("redis://admin:@localhost:6379/0")
+	if err != nil {
+		return nil, err
+	}
+
+	customLogger := log.New(os.Stdout, "⇨ ", log.Flags())
+
+	rdb := redis.NewClient(opt)
+
+	if err := rdb.Ping(context.Background()).Err(); err != nil {
+		return nil, err
+	}
+
 	return &Server{
 		e:      e,
-		logger: log.New(os.Stdout, "⇨ ", log.Flags()),
+		st:     store.NewRedisStore(rdb),
+		logger: customLogger,
 	}, nil
 }
 
@@ -60,6 +78,10 @@ func (s *Server) Run() error {
 	ctx, shutdown := context.WithTimeout(context.Background(), ctxTimeout*time.Second)
 	defer shutdown()
 
-	s.logger.Printf("Server Exited Properly")
+	if err := s.st.Close(); err != nil {
+		s.logger.Printf("Server Exited with err: %s", err.Error())
+	} else {
+		s.logger.Printf("Server Exited Properly")
+	}
 	return s.e.Server.Shutdown(ctx)
 }

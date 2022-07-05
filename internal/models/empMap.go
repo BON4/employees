@@ -2,6 +2,7 @@ package models
 
 import (
 	"bytes"
+	"context"
 	"encoding/gob"
 	"encoding/json"
 	"errors"
@@ -138,17 +139,17 @@ func (e *EmployeeMap) unmarshal(bData []byte) error {
 	return err
 }
 
-func (e EmployeeMap) writeToStore(s kvStore.Store) error {
+func (e EmployeeMap) writeToStore(ctx context.Context, s kvStore.Store) error {
 	eGob, err := e.marshal()
 	if err == nil {
-		return s.Set(e.Payload.UUID, eGob)
+		return s.Set(ctx, e.Payload.UUID, eGob)
 	}
 	return err
 }
 
-func (e *EmployeeMap) readFromStore(s kvStore.Store) error {
+func (e *EmployeeMap) readFromStore(ctx context.Context, s kvStore.Store) error {
 	bData := make([]byte, 0, 512)
-	ok, err := s.Get(e.Payload.UUID, &bData)
+	ok, err := s.Get(ctx, e.Payload.UUID, &bData)
 
 	if ok {
 		return e.unmarshal(bData)
@@ -169,18 +170,18 @@ func (e *EmployeeMap) Json() (string, error) {
 	return string(b), nil
 }
 
-func buildMapFromStore(e *EmployeeMap, s kvStore.Store) error {
+func buildMapFromStore(ctx context.Context, e *EmployeeMap, s kvStore.Store) error {
 	if len(e.Payload.UUID) == 0 {
 		return errors.New("employeeMap does not exists")
 	}
 
-	if err := e.readFromStore(s); err != nil {
+	if err := e.readFromStore(ctx, s); err != nil {
 		return err
 	}
 
 	for k, v := range e.Ords {
 		newE := NewEmployeeMap(v.Payload)
-		if err := buildMapFromStore(newE, s); err != nil {
+		if err := buildMapFromStore(ctx, newE, s); err != nil {
 			return err
 		}
 		e.Ords[k] = newE
@@ -189,13 +190,13 @@ func buildMapFromStore(e *EmployeeMap, s kvStore.Store) error {
 	return nil
 }
 
-func dumpMapToStore(e *EmployeeMap, s kvStore.Store) error {
-	if err := e.writeToStore(s); err != nil {
+func dumpMapToStore(ctx context.Context, e *EmployeeMap, s kvStore.Store) error {
+	if err := e.writeToStore(ctx, s); err != nil {
 		return err
 	}
 
 	for _, v := range e.Ords {
-		if err := dumpMapToStore(v, s); err != nil {
+		if err := dumpMapToStore(ctx, v, s); err != nil {
 			return err
 		}
 	}

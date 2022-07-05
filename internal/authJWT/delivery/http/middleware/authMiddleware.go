@@ -18,7 +18,6 @@ type jwtMiddleware struct {
 func (j *jwtMiddleware) AuthCheck() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			j.logger.Println("Got AuthCheck")
 			cookie, err := c.Cookie("access_token")
 			if err != nil {
 				j.logger.Println(err.Error())
@@ -53,7 +52,6 @@ func (j *jwtMiddleware) AuthCheck() echo.MiddlewareFunc {
 func (j *jwtMiddleware) AccessCheck() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			j.logger.Println("Got AccessCheck")
 			if emp, ok := c.Get("Emp").(*models.Employee); ok {
 				if emp.UUID == c.Param("uuid") {
 					return next(c)

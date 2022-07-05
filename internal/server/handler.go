@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"time"
 
 	authHttp "github.com/BON4/employees/internal/authJWT/delivery/http"
@@ -10,7 +11,6 @@ import (
 	treeRepository "github.com/BON4/employees/internal/employees/repository"
 	"github.com/BON4/employees/internal/models"
 	"github.com/BON4/employees/pkg/jwtService"
-	"github.com/BON4/employees/pkg/store"
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -24,13 +24,16 @@ func (s *Server) MapHandlers(e *echo.Echo) error {
 
 	e.Use(middleware.Logger())
 
-	store := store.NewStore()
-	eT := models.NewEmpMapTreeDEBUG()
-	rep := treeRepository.NewTreeRepo(eT, store)
+	eT := models.NewEmpMapTree()
+	if err := eT.Load(context.Background(), s.st); err != nil {
+		return err
+	}
+
+	rep := treeRepository.NewTreeRepo(eT, s.st)
 
 	jwtManagerConf := jwtService.NewJWTConfig(ACCESS_KEY, REFRESH_KEY, ACCESS_TIME, REFRESH_TIME)
 	jwtManager := jwtService.NewJWTService(jwtManagerConf)
-	jwtRep := jwtRepository.NewJWTRepo(rep, store, jwtManager)
+	jwtRep := jwtRepository.NewJWTRepo(rep, s.st, jwtManager)
 
 	jwtMid := jwtMiddleware.NewJwtMiddleware(jwtManager, s.logger)
 

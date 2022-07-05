@@ -1,6 +1,7 @@
 package models
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -12,7 +13,7 @@ import (
 var mapStore kvStore.Store
 
 func TestMain(m *testing.M) {
-	mapStore = kvStore.NewStore()
+	mapStore = kvStore.NewMapStore()
 	m.Run()
 }
 
@@ -55,13 +56,13 @@ func TestEmpMapNew(t *testing.T) {
 func TestMapTreeLoadSave(t *testing.T) {
 	emps := createDumbEmplMap()
 
-	err := emps.Save(mapStore)
+	err := emps.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}
 
 	loadedTree := NewEmpMapTree()
-	if err := loadedTree.Load(mapStore); err != nil {
+	if err := loadedTree.Load(context.Background(), mapStore); err != nil {
 		t.Error(err)
 	}
 
@@ -75,7 +76,7 @@ func TestMapTreeLoadSave(t *testing.T) {
 
 func TestEmpMapDelete(t *testing.T) {
 	empTree := createDumbEmplMap()
-	err := empTree.Save(mapStore)
+	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}
@@ -106,7 +107,7 @@ func TestEmpMapDelete(t *testing.T) {
 
 func TestEmpMapInsert(t *testing.T) {
 	empTree := createDumbEmplMap()
-	err := empTree.Save(mapStore)
+	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}
@@ -133,7 +134,7 @@ func TestEmpMapInsert(t *testing.T) {
 
 func TestEmpMapFind(t *testing.T) {
 	empTree := createDumbEmplMap()
-	err := empTree.Save(mapStore)
+	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}
@@ -155,7 +156,7 @@ func TestEmpMapFind(t *testing.T) {
 
 func TestEmpMapTraverse(t *testing.T) {
 	empTree := createDumbEmplMap()
-	err := empTree.Save(mapStore)
+	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}

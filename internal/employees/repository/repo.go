@@ -15,12 +15,15 @@ type TreeRepo struct {
 
 // Delete implements employees.EmpRepository
 func (t *TreeRepo) Delete(ctx context.Context, empID string) error {
-	err := t.repo.Delete(empID)
-	if err != nil {
+	if err := t.repo.Delete(empID); err != nil {
 		return err
 	}
 
-	return t.repo.Save(t.store)
+	if err := t.store.Delete(ctx, empID); err != nil {
+		return err
+	}
+
+	return t.repo.Save(ctx, t.store)
 }
 
 func (t *TreeRepo) Move(ctx context.Context, bossID, empID, toID string) error {
@@ -35,7 +38,7 @@ func (t *TreeRepo) Move(ctx context.Context, bossID, empID, toID string) error {
 			return err
 		}
 
-		return t.repo.Save(t.store)
+		return t.repo.Save(ctx, t.store)
 	}
 
 	return nil
@@ -67,7 +70,7 @@ func (t *TreeRepo) Insert(ctx context.Context, empID string, emp models.Employee
 		return err
 	}
 
-	return t.repo.Save(t.store)
+	return t.repo.Save(ctx, t.store)
 }
 
 // Traverse implements employees.EmpRepository

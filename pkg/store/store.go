@@ -1,8 +1,10 @@
 package store
 
+import "context"
+
 type Store interface {
-	Set(k string, v []byte) error
-	Get(k string, v *[]byte) (found bool, err error)
-	Delete(k string) error
+	Set(ctx context.Context, k string, v []byte) error
+	Get(ctx context.Context, k string, v *[]byte) (found bool, err error)
+	Delete(ctx context.Context, k string) error
 	Close() error
 }

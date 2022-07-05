@@ -21,7 +21,7 @@ var treeRepo employees.EmpRepository
 var jwtM *jwtService.JWTService
 
 func TestMain(m *testing.M) {
-	s := store.NewStore()
+	s := store.NewMapStore()
 	eT := models.NewEmpMapTreeDEBUG()
 	treeRepo = repository.NewTreeRepo(eT, s)
 	jwtConf := jwtService.NewJWTConfig(accessKey, refreshKey, time.Minute, time.Hour)

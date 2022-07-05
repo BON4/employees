@@ -9,7 +9,7 @@ import (
 )
 
 func TestJson(t *testing.T) {
-	store := store.NewStore()
+	store := store.NewMapStore()
 	eT := models.NewEmpMapTreeDEBUG()
 	repo := NewTreeRepo(eT, store)
 
