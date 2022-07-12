@@ -19,4 +19,4 @@ employees> go test ./...
 ```
 
 ## Service architecture
-![alt text](https://github.com/BON4/employees/blob/master/architecture.svg?raw=true)
+![alt text](https://github.com/BON4/employees/blob/master/architecture.png?raw=true)
