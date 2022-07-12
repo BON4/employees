@@ -63,7 +63,7 @@ func (s *Server) Run() error {
 	go func() {
 		s.logger.Printf("Server is listening on PORT: %s", PORT)
 		if err := s.e.StartServer(server); err != nil {
-			s.logger.Fatalf("Error starting Server: ", err)
+			s.logger.Fatalf("Error starting Server: %s", err.Error())
 		}
 	}()
 
