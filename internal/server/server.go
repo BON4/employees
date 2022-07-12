@@ -15,11 +15,12 @@ import (
 )
 
 const (
-	maxHeaderBytes = 1 << 20
-	ctxTimeout     = 5
-	PORT           = ":8080"
-	READ_TIMEOUT   = 5
-	WRITE_TIMEOUT  = 5
+	maxHeaderBytes    = 1 << 20
+	ctxTimeout        = 5
+	PORT              = ":8080"
+	READ_TIMEOUT      = 5
+	WRITE_TIMEOUT     = 5
+	REDIS_CONN_STRING = "redis://admin:@localhost:6379/0"
 )
 
 type Server struct {
@@ -31,7 +32,7 @@ type Server struct {
 func NewServer() (*Server, error) {
 	e := echo.New()
 
-	opt, err := redis.ParseURL("redis://admin:@localhost:6379/0")
+	opt, err := redis.ParseURL(REDIS_CONN_STRING)
 	if err != nil {
 		return nil, err
 	}

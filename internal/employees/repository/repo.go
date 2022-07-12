@@ -27,7 +27,6 @@ func (t *TreeRepo) Delete(ctx context.Context, empID string) error {
 }
 
 func (t *TreeRepo) Move(ctx context.Context, bossID, empID, toID string) error {
-
 	emp, err := t.repo.FindById(bossID)
 	if err != nil {
 		return err

@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"encoding/json"
-	"errors"
 	"log"
 
 	"github.com/BON4/employees/internal/models"
@@ -18,16 +17,17 @@ type jwtMiddleware struct {
 func (j *jwtMiddleware) AuthCheck() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Request().Header.Set("Access-Control-Allow-Origin", "*")
 			cookie, err := c.Cookie("access_token")
 			if err != nil {
 				j.logger.Println(err.Error())
-				return err
+				return echo.NewHTTPError(500, err.Error())
 			}
 
 			tokData, err := j.jwtManager.VerifyAcess(cookie.Value)
 			if err != nil {
 				j.logger.Println(err.Error())
-				return err
+				return echo.NewHTTPError(500, err.Error())
 			}
 
 			emp := &models.Employee{}
@@ -35,11 +35,11 @@ func (j *jwtMiddleware) AuthCheck() echo.MiddlewareFunc {
 				if empJSON, err := json.Marshal(empByte); err == nil {
 					if err := json.Unmarshal(empJSON, emp); err != nil {
 						j.logger.Println(err.Error())
-						return err
+						return echo.NewHTTPError(500, err.Error())
 					}
 				}
 			} else {
-				return errors.New("invalid token data")
+				return c.JSON(500, "invalid token data")
 			}
 
 			c.Set("Emp", emp)
@@ -52,13 +52,14 @@ func (j *jwtMiddleware) AuthCheck() echo.MiddlewareFunc {
 func (j *jwtMiddleware) AccessCheck() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
+			c.Request().Header.Set("Access-Control-Allow-Origin", "*")
 			if emp, ok := c.Get("Emp").(*models.Employee); ok {
 				if emp.UUID == c.Param("uuid") {
 					return next(c)
 				}
 			}
 
-			return errors.New("access denied")
+			return c.JSON(echo.ErrForbidden.Code, "access denied")
 		}
 	}
 }

@@ -18,7 +18,7 @@ func (e employeeHandler) List() echo.HandlerFunc {
 		uuid := c.Param("uuid")
 		jsonEmpTree, err := e.repo.Json(c.Request().Context(), uuid)
 		if err != nil {
-			return err
+			return echo.NewHTTPError(500, err.Error())
 		}
 		return c.JSONBlob(200, []byte(jsonEmpTree))
 	}
@@ -31,11 +31,11 @@ func (e employeeHandler) Move() echo.HandlerFunc {
 		josnForm := MoveForm{}
 
 		if err := json.NewDecoder(c.Request().Body).Decode(&josnForm); err != nil {
-			return err
+			return echo.NewHTTPError(500, err.Error())
 		}
 
 		if err := e.repo.Move(c.Request().Context(), uuid, josnForm.FromUUID, josnForm.ToUUID); err != nil {
-			return err
+			return echo.NewHTTPError(500, err.Error())
 		}
 
 		return c.JSON(200, []byte(""))

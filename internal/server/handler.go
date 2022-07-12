@@ -23,6 +23,11 @@ var REFRESH_TIME time.Duration = time.Hour * 6
 func (s *Server) MapHandlers(e *echo.Echo) error {
 
 	e.Use(middleware.Logger())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"http://localhost:8080", "http://localhost:3000"},
+		AllowCredentials: true,
+		AllowHeaders:     []string{echo.HeaderOrigin, echo.HeaderContentType, echo.HeaderAccept, echo.HeaderCookie},
+	}))
 
 	eT := models.NewEmpMapTree()
 	if err := eT.Load(context.Background(), s.st); err != nil {
