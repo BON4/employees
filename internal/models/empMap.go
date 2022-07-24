@@ -21,14 +21,6 @@ type EmployeeMap struct {
 	Ords    map[string]*EmployeeMap `json:"Oredenates"`
 }
 
-func NewEmployeeMap(payload Employee, ords ...(*EmployeeMap)) *EmployeeMap {
-	emp := &EmployeeMap{Payload: payload, Ords: make(map[string]*EmployeeMap, len(ords)), rwMu: &sync.RWMutex{}}
-	for _, v := range ords {
-		emp.Ords[v.Payload.UUID] = v
-	}
-	return emp
-}
-
 func (e *EmployeeMap) insert(newTree *EmployeeMap) {
 	e.rwMu.Lock()
 	e.Ords[newTree.Payload.UUID] = newTree
@@ -50,17 +42,21 @@ func (e *EmployeeMap) len() int {
 func (e EmployeeMap) copy() EmployeeMap {
 	e.rwMu.Lock()
 	defer e.rwMu.Unlock()
-	cEmp := *NewEmployeeMap(e.Payload)
+	cEmp := *newEmployeeMap(e.Payload)
 	for k, v := range e.Ords {
-		cEmp.Ords[k] = NewEmployeeMap(v.Payload)
+		cEmp.Ords[k] = newEmployeeMap(v.Payload)
 	}
 	return cEmp
 }
 
 //IsExists - checks if provided emp with this id is exists within of scoupe of current emp
-func (e *EmployeeMap) IsExists(empUUID string) (Employee, bool) {
+func (e *EmployeeMap) IsExists(ctx context.Context, empUUID string) (Employee, bool) {
 	var helper func(empUUID string, fe *EmployeeMap) (Employee, bool)
 	helper = func(empUUID string, fe *EmployeeMap) (Employee, bool) {
+		if err := ctx.Err(); err != nil {
+			return Employee{}, false
+		}
+
 		if fe.Payload.UUID == empUUID {
 			return fe.Payload, true
 		}
@@ -96,15 +92,19 @@ func (e EmployeeMap) String() string {
 	return helper(&e, 0)
 }
 
-func (e EmployeeMap) Traverse(f func(emp Employee) error) error {
-	var helper func(e *EmployeeMap, f func(emp Employee) error) error
-	helper = func(e *EmployeeMap, f func(emp Employee) error) error {
+func (e EmployeeMap) Traverse(ctx context.Context, f func(emp Employee) error) error {
+	var helper func(e *EmployeeMap, ctx context.Context, f func(emp Employee) error) error
+	helper = func(e *EmployeeMap, ctx context.Context, f func(emp Employee) error) error {
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+
 		if err := f(e.Payload); err != nil {
 			return err
 		}
 
 		for _, v := range e.Ords {
-			if err := helper(v, f); err != nil {
+			if err := helper(v, ctx, f); err != nil {
 				return err
 			}
 		}
@@ -115,7 +115,7 @@ func (e EmployeeMap) Traverse(f func(emp Employee) error) error {
 	e.rwMu.Lock()
 	defer e.rwMu.Unlock()
 
-	return helper(&e, f)
+	return helper(&e, ctx, f)
 }
 
 func (e EmployeeMap) marshal() ([]byte, error) {
@@ -180,7 +180,7 @@ func buildMapFromStore(ctx context.Context, e *EmployeeMap, s kvStore.Store) err
 	}
 
 	for k, v := range e.Ords {
-		newE := NewEmployeeMap(v.Payload)
+		newE := newEmployeeMap(v.Payload)
 		if err := buildMapFromStore(ctx, newE, s); err != nil {
 			return err
 		}
@@ -202,4 +202,12 @@ func dumpMapToStore(ctx context.Context, e *EmployeeMap, s kvStore.Store) error 
 	}
 
 	return nil
+}
+
+func newEmployeeMap(payload Employee, ords ...(*EmployeeMap)) *EmployeeMap {
+	emp := &EmployeeMap{Payload: payload, Ords: make(map[string]*EmployeeMap, len(ords)), rwMu: &sync.RWMutex{}}
+	for _, v := range ords {
+		emp.Ords[v.Payload.UUID] = v
+	}
+	return emp
 }

@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/BON4/employees/internal/authJWT"
+	uerrors "github.com/BON4/employees/internal/errors"
 	"github.com/labstack/echo/v4"
 )
 
@@ -18,12 +19,19 @@ func (a *authHandler) Login() echo.HandlerFunc {
 		form := LoginForm{}
 		err := json.NewDecoder(c.Request().Body).Decode(&form)
 		if err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			a.logger.Println(err.Error())
+			return echo.NewHTTPError(500)
 		}
 
 		access, refresh, err := a.repo.Login(c.Request().Context(), form.Username, form.Password)
 		if err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			switch err.(type) {
+			case uerrors.UserError:
+				return echo.NewHTTPError(500, err.Error())
+			default:
+				a.logger.Println(err.Error())
+				return echo.NewHTTPError(500)
+			}
 		}
 
 		return c.JSON(200, Cookies{
@@ -38,12 +46,19 @@ func (a *authHandler) Register() echo.HandlerFunc {
 		form := LoginForm{}
 		err := json.NewDecoder(c.Request().Body).Decode(&form)
 		if err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			a.logger.Println(err.Error())
+			return echo.NewHTTPError(500)
 		}
 
 		access, refresh, err := a.repo.Register(c.Request().Context(), form.Username, form.Password)
 		if err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			switch err.(type) {
+			case uerrors.UserError:
+				return echo.NewHTTPError(500, err.Error())
+			default:
+				a.logger.Println(err.Error())
+				return echo.NewHTTPError(500)
+			}
 		}
 
 		return c.JSON(200, Cookies{
@@ -57,13 +72,19 @@ func (a *authHandler) Refresh() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		cookie, err := c.Cookie("refresh_token")
 		if err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			a.logger.Println(err.Error())
+			return echo.NewHTTPError(500)
 		}
 
 		access, refresh, err := a.repo.Refresh(c.Request().Context(), cookie.Value)
-
 		if err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			switch err.(type) {
+			case uerrors.UserError:
+				return echo.NewHTTPError(500, err.Error())
+			default:
+				a.logger.Println(err.Error())
+				return echo.NewHTTPError(500)
+			}
 		}
 
 		return c.JSON(200, Cookies{

@@ -2,8 +2,8 @@ package models
 
 import (
 	"context"
-	"errors"
 
+	uerrors "github.com/BON4/employees/internal/errors"
 	kvStore "github.com/BON4/employees/pkg/store"
 )
 
@@ -12,30 +12,17 @@ type EmpMapTree struct {
 	root *EmployeeMap
 }
 
-func NewEmpMapTree() *EmpMapTree {
-	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "adminadmin", Admin)))}
-}
-
-func NewEmpMapTreeDEBUG() *EmpMapTree {
-	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "adminadmin", Admin),
-		NewEmployeeMap(NewEmployee("1", "1boss", Boss),
-			NewEmployeeMap(NewEmployee("4", "4boss", Boss),
-				NewEmployeeMap(NewEmployee("9", "9regular", Regular))),
-			NewEmployeeMap(NewEmployee("5", "5regular", Regular))),
-		NewEmployeeMap(NewEmployee("2", "2boss", Boss),
-			NewEmployeeMap(NewEmployee("6", "6reglar", Regular)),
-			NewEmployeeMap(NewEmployee("7", "7regular", Regular))),
-		NewEmployeeMap(NewEmployee("3", "3boss", Boss),
-			NewEmployeeMap(NewEmployee("8", "8regular", Regular)))))}
-}
-
 func (e EmpMapTree) String() string {
 	return e.root.String()
 }
 
-func (e *EmpMapTree) findParent(uuid string) (*EmployeeMap, error) {
+func (e *EmpMapTree) findParent(ctx context.Context, uuid string) (*EmployeeMap, error) {
 	var helper func(em *EmployeeMap, uuid string) *EmployeeMap
 	helper = func(em *EmployeeMap, uuid string) *EmployeeMap {
+		if err := ctx.Err(); err != nil {
+			return nil
+		}
+
 		if _, ok := em.Ords[uuid]; ok {
 			return em
 		}
@@ -51,15 +38,19 @@ func (e *EmpMapTree) findParent(uuid string) (*EmployeeMap, error) {
 
 	fEmp := helper(e.root, uuid)
 	if fEmp == nil {
-		return nil, errors.New("employee does not exists")
+		return nil, uerrors.NewError[uerrors.UserError]("employee does not exists")
 	}
 
 	return fEmp, nil
 }
 
-func (e *EmpMapTree) FindById(UUID string) (*EmployeeMap, error) {
+func (e *EmpMapTree) FindById(ctx context.Context, UUID string) (*EmployeeMap, error) {
 	var helper func(e *EmployeeMap, UUID string) *EmployeeMap
 	helper = func(e *EmployeeMap, UUID string) *EmployeeMap {
+		if err := ctx.Err(); err != nil {
+			return nil
+		}
+
 		if e.Payload.UUID == UUID {
 			return e
 		}
@@ -76,12 +67,16 @@ func (e *EmpMapTree) FindById(UUID string) (*EmployeeMap, error) {
 	if e := helper(e.root, UUID); e != nil {
 		return e, nil
 	}
-	return nil, errors.New("employee does not exists")
+	return nil, uerrors.NewError[uerrors.UserError]("employee does not exists")
 }
 
-func (e *EmpMapTree) FindByUsername(Username string) (*EmployeeMap, error) {
+func (e *EmpMapTree) FindByUsername(ctx context.Context, Username string) (*EmployeeMap, error) {
 	var helper func(e *EmployeeMap, Username string) *EmployeeMap
 	helper = func(e *EmployeeMap, Username string) *EmployeeMap {
+		if err := ctx.Err(); err != nil {
+			return nil
+		}
+
 		if e.Payload.Username == Username {
 			return e
 		}
@@ -98,21 +93,21 @@ func (e *EmpMapTree) FindByUsername(Username string) (*EmployeeMap, error) {
 	if e := helper(e.root, Username); e != nil {
 		return e, nil
 	}
-	return nil, errors.New("employee does not exists")
+	return nil, uerrors.NewError[uerrors.UserError]("employee does not exists")
 }
 
-func (e *EmpMapTree) Move(empUUID, toUUID string) error {
-	empMapTo, err := e.FindById(toUUID)
+func (e *EmpMapTree) Move(ctx context.Context, empUUID, toUUID string) error {
+	empMapTo, err := e.FindById(ctx, toUUID)
 	if err != nil {
 		return err
 	}
 
-	empMap, err := e.FindById(empUUID)
+	empMap, err := e.FindById(ctx, empUUID)
 	if err != nil {
 		return err
 	}
 
-	empMapParrent, err := e.findParent(empUUID)
+	empMapParrent, err := e.findParent(ctx, empUUID)
 	if err != nil {
 		return err
 	}
@@ -135,26 +130,26 @@ func (e *EmpMapTree) Move(empUUID, toUUID string) error {
 }
 
 //TODO (Maby) if parent of inserted was at Role Regular change it to Boss
-func (e *EmpMapTree) Insert(uuid string, newEmp Employee) error {
-	if _, ok := e.root.IsExists(newEmp.UUID); ok {
-		return errors.New("employee with this UUID already exists")
+func (e *EmpMapTree) Insert(ctx context.Context, uuid string, newEmp Employee) error {
+	if _, ok := e.root.IsExists(ctx, newEmp.UUID); ok {
+		return uerrors.NewError[uerrors.UserError]("employee with this UUID already exists")
 	}
 
-	if err := e.root.Traverse(func(emp Employee) error {
+	if err := e.root.Traverse(ctx, func(emp Employee) error {
 		if emp.Username == newEmp.Username {
-			return errors.New("employee with this username already exists")
+			return uerrors.NewError[uerrors.UserError]("employee with this username already exists")
 		}
 		return nil
 	}); err != nil {
 		return err
 	}
 
-	p, err := e.FindById(uuid)
+	p, err := e.FindById(ctx, uuid)
 	if err != nil {
 		return err
 	}
 
-	p.insert(NewEmployeeMap(newEmp))
+	p.insert(newEmployeeMap(newEmp))
 
 	if p.Payload.Role == Regular {
 		p.Payload.Role = Boss
@@ -164,8 +159,8 @@ func (e *EmpMapTree) Insert(uuid string, newEmp Employee) error {
 }
 
 //TODO (Maby) if parent of deleted was at Role Boss, and after deletion it have no childs, change it to Regular
-func (e *EmpMapTree) Delete(childUUID string) error {
-	p, err := e.findParent(childUUID)
+func (e *EmpMapTree) Delete(ctx context.Context, childUUID string) error {
+	p, err := e.findParent(ctx, childUUID)
 	if err != nil {
 		return err
 	}
@@ -179,4 +174,21 @@ func (e *EmpMapTree) Load(ctx context.Context, s kvStore.Store) error {
 
 func (e *EmpMapTree) Save(ctx context.Context, s kvStore.Store) error {
 	return dumpMapToStore(ctx, e.root, s)
+}
+
+func NewEmpMapTree() *EmpMapTree {
+	return &EmpMapTree{(newEmployeeMap(NewEmployee("admin", "adminadmin", Admin)))}
+}
+
+func NewEmpMapTreeDEBUG() *EmpMapTree {
+	return &EmpMapTree{(newEmployeeMap(NewEmployee("admin", "adminadmin", Admin),
+		newEmployeeMap(NewEmployee("1", "1boss", Boss),
+			newEmployeeMap(NewEmployee("4", "4boss", Boss),
+				newEmployeeMap(NewEmployee("9", "9regular", Regular))),
+			newEmployeeMap(NewEmployee("5", "5regular", Regular))),
+		newEmployeeMap(NewEmployee("2", "2boss", Boss),
+			newEmployeeMap(NewEmployee("6", "6reglar", Regular)),
+			newEmployeeMap(NewEmployee("7", "7regular", Regular))),
+		newEmployeeMap(NewEmployee("3", "3boss", Boss),
+			newEmployeeMap(NewEmployee("8", "8regular", Regular)))))}
 }

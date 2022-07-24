@@ -2,10 +2,10 @@ package repository
 
 import (
 	"context"
-	"errors"
 
 	"github.com/BON4/employees/internal/authJWT"
 	"github.com/BON4/employees/internal/employees"
+	uerrors "github.com/BON4/employees/internal/errors"
 	"github.com/BON4/employees/internal/models"
 	"github.com/BON4/employees/pkg/jwtService"
 	kvStore "github.com/BON4/employees/pkg/store"
@@ -25,7 +25,7 @@ func (j *JWTRepo) Login(ctx context.Context, username, password string) (string,
 	}
 
 	if emp.Password != password {
-		return "", "", errors.New("wrong password")
+		return "", "", uerrors.NewError[uerrors.UserError]("wrong password")
 	}
 
 	access, err := j.jwtManager.CreateAccess(map[string]interface{}{
@@ -69,7 +69,7 @@ func (j *JWTRepo) Refresh(ctx context.Context, refreshToken string) (string, str
 
 		return access, refresh, nil
 	}
-	return "", "", errors.New("invalid refresh token")
+	return "", "", uerrors.NewError[uerrors.UserError]("invalid refresh token")
 }
 
 // Register implements authJWT.AuthRepo

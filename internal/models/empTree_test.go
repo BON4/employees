@@ -18,25 +18,17 @@ func TestMain(m *testing.M) {
 }
 
 func createDumbEmplMap() *EmpMapTree {
-	return &EmpMapTree{(NewEmployeeMap(NewEmployee("admin", "", Admin),
-		NewEmployeeMap(NewEmployee("1", "", Boss),
-			NewEmployeeMap(NewEmployee("4", "", Boss),
-				NewEmployeeMap(NewEmployee("9", "", Regular))),
-			NewEmployeeMap(NewEmployee("5", "", Regular))),
-		NewEmployeeMap(NewEmployee("2", "", Boss),
-			NewEmployeeMap(NewEmployee("6", "", Regular)),
-			NewEmployeeMap(NewEmployee("7", "", Regular))),
-		NewEmployeeMap(NewEmployee("3", "", Boss),
-			NewEmployeeMap(NewEmployee("8", "", Regular)))))}
+	return NewEmpMapTreeDEBUG()
 }
 
 func fuzzDumbEmplTree(n int, e *EmpMapTree) error {
 	counter := 9
+	ctx := context.Background()
 	for i := 0; i < n; i++ {
 		v := fmt.Sprintf("%d", rand.Intn(counter)+1)
-		emp, err := e.FindByUsername(v)
+		emp, err := e.FindByUsername(ctx, v)
 		if err == nil {
-			err = e.Insert(emp.Payload.UUID, NewEmployee(fmt.Sprintf("%d", counter), "", Regular))
+			err = e.Insert(ctx, emp.Payload.UUID, NewEmployee(fmt.Sprintf("%d", counter), "", Regular))
 			if err != nil {
 				return errors.New(fmt.Sprintf("%s:%s", err.Error(), emp.Payload.UUID))
 			}
@@ -75,6 +67,8 @@ func TestMapTreeLoadSave(t *testing.T) {
 }
 
 func TestEmpMapDelete(t *testing.T) {
+	ctx := context.Background()
+
 	empTree := createDumbEmplMap()
 	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
@@ -82,23 +76,23 @@ func TestEmpMapDelete(t *testing.T) {
 	}
 	t.Logf("\n%s", empTree)
 
-	fEmp, err := empTree.FindByUsername("8")
+	fEmp, err := empTree.FindByUsername(ctx, "8")
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if err := empTree.Delete(fEmp.Payload.UUID); err != nil {
+	if err := empTree.Delete(ctx, fEmp.Payload.UUID); err != nil {
 		t.Error(err)
 	}
 
-	fAdmin, err := empTree.FindByUsername("admin")
+	fAdmin, err := empTree.FindByUsername(ctx, "admin")
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	if err := empTree.Delete(fAdmin.Payload.UUID); err == nil {
+	if err := empTree.Delete(ctx, fAdmin.Payload.UUID); err == nil {
 		t.Error("Cant delete admin")
 	}
 
@@ -107,25 +101,26 @@ func TestEmpMapDelete(t *testing.T) {
 
 func TestEmpMapInsert(t *testing.T) {
 	empTree := createDumbEmplMap()
+	ctx := context.Background()
 	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}
 
-	fEmp, err := empTree.FindByUsername("admin")
+	fEmp, err := empTree.FindByUsername(ctx, "admin")
 
 	if err != nil {
 		t.Error(err)
 	}
 	e := NewEmployee("10", "", Regular)
 
-	if err := empTree.Insert(fEmp.Payload.UUID, e); err != nil {
+	if err := empTree.Insert(ctx, fEmp.Payload.UUID, e); err != nil {
 		t.Error(err)
 	}
 
 	e = NewEmployee("8", "", Regular)
 
-	if err := empTree.Insert(fEmp.Payload.UUID, e); err == nil {
+	if err := empTree.Insert(ctx, fEmp.Payload.UUID, e); err == nil {
 		t.Error("Shuld be error")
 	}
 
@@ -133,19 +128,20 @@ func TestEmpMapInsert(t *testing.T) {
 }
 
 func TestEmpMapFind(t *testing.T) {
+	ctx := context.Background()
 	empTree := createDumbEmplMap()
 	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}
 
-	fEmp, err := empTree.FindByUsername("4")
+	fEmp, err := empTree.FindByUsername(ctx, "4")
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	fEmp, err = empTree.FindById(fEmp.Payload.UUID)
+	fEmp, err = empTree.FindById(ctx, fEmp.Payload.UUID)
 
 	if err != nil {
 		t.Error(err)
@@ -156,19 +152,20 @@ func TestEmpMapFind(t *testing.T) {
 
 func TestEmpMapTraverse(t *testing.T) {
 	empTree := createDumbEmplMap()
+	ctx := context.Background()
 	err := empTree.Save(context.Background(), mapStore)
 	if err != nil {
 		t.Error(err)
 	}
 
-	if err := empTree.root.Traverse(func(emp Employee) error {
+	if err := empTree.root.Traverse(ctx, func(emp Employee) error {
 		t.Logf("%+v\n", emp)
 		return nil
 	}); err != nil {
 		t.Error(err)
 	}
 
-	if err := empTree.root.Traverse(func(emp Employee) error {
+	if err := empTree.root.Traverse(ctx, func(emp Employee) error {
 		if emp.Username == "4" {
 			return errors.New("employee with this username already exists")
 		}

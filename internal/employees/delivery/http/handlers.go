@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/BON4/employees/internal/employees"
+	uerrors "github.com/BON4/employees/internal/errors"
 	echo "github.com/labstack/echo/v4"
 )
 
@@ -13,29 +14,42 @@ type employeeHandler struct {
 	repo   employees.EmpRepository
 }
 
-func (e employeeHandler) List() echo.HandlerFunc {
+func (e *employeeHandler) List() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		uuid := c.Param("uuid")
 		jsonEmpTree, err := e.repo.Json(c.Request().Context(), uuid)
 		if err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			switch err.(type) {
+			case uerrors.UserError:
+				return echo.NewHTTPError(500, err.Error())
+			default:
+				e.logger.Println(err.Error())
+				return echo.NewHTTPError(500)
+			}
 		}
 		return c.JSONBlob(200, []byte(jsonEmpTree))
 	}
 }
 
-func (e employeeHandler) Move() echo.HandlerFunc {
+func (e *employeeHandler) Move() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		uuid := c.Param("uuid")
 
 		josnForm := MoveForm{}
 
 		if err := json.NewDecoder(c.Request().Body).Decode(&josnForm); err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			e.logger.Println(err.Error())
+			return echo.NewHTTPError(500)
 		}
 
 		if err := e.repo.Move(c.Request().Context(), uuid, josnForm.FromUUID, josnForm.ToUUID); err != nil {
-			return echo.NewHTTPError(500, err.Error())
+			switch err.(type) {
+			case uerrors.UserError:
+				return echo.NewHTTPError(500, err.Error())
+			default:
+				e.logger.Println(err.Error())
+				return echo.NewHTTPError(500)
+			}
 		}
 
 		return c.JSON(200, []byte(""))

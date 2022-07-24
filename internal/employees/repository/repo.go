@@ -15,7 +15,7 @@ type TreeRepo struct {
 
 // Delete implements employees.EmpRepository
 func (t *TreeRepo) Delete(ctx context.Context, empID string) error {
-	if err := t.repo.Delete(empID); err != nil {
+	if err := t.repo.Delete(ctx, empID); err != nil {
 		return err
 	}
 
@@ -27,13 +27,13 @@ func (t *TreeRepo) Delete(ctx context.Context, empID string) error {
 }
 
 func (t *TreeRepo) Move(ctx context.Context, bossID, empID, toID string) error {
-	emp, err := t.repo.FindById(bossID)
+	emp, err := t.repo.FindById(ctx, bossID)
 	if err != nil {
 		return err
 	}
 
-	if _, ok := emp.IsExists(empID); ok {
-		if err := t.repo.Move(empID, toID); err != nil {
+	if _, ok := emp.IsExists(ctx, empID); ok {
+		if err := t.repo.Move(ctx, empID, toID); err != nil {
 			return err
 		}
 
@@ -45,7 +45,7 @@ func (t *TreeRepo) Move(ctx context.Context, bossID, empID, toID string) error {
 
 // GetByID implements employees.EmpRepository
 func (t *TreeRepo) GetByID(ctx context.Context, empID string) (models.Employee, error) {
-	emp, err := t.repo.FindById(empID)
+	emp, err := t.repo.FindById(ctx, empID)
 	if err != nil {
 		return models.Employee{}, err
 	}
@@ -54,7 +54,7 @@ func (t *TreeRepo) GetByID(ctx context.Context, empID string) (models.Employee, 
 }
 
 func (t *TreeRepo) GetByUsername(ctx context.Context, empUsername string) (models.Employee, error) {
-	emp, err := t.repo.FindByUsername(empUsername)
+	emp, err := t.repo.FindByUsername(ctx, empUsername)
 	if err != nil {
 		return models.Employee{}, err
 	}
@@ -64,7 +64,7 @@ func (t *TreeRepo) GetByUsername(ctx context.Context, empUsername string) (model
 
 // Insert implements employees.EmpRepository
 func (t *TreeRepo) Insert(ctx context.Context, empID string, emp models.Employee) error {
-	err := t.repo.Insert(empID, emp)
+	err := t.repo.Insert(ctx, empID, emp)
 	if err != nil {
 		return err
 	}
@@ -74,17 +74,17 @@ func (t *TreeRepo) Insert(ctx context.Context, empID string, emp models.Employee
 
 // Traverse implements employees.EmpRepository
 func (t *TreeRepo) Traverse(ctx context.Context, emp *models.Employee, f func(emp models.Employee) error) error {
-	empMap, err := t.repo.FindById(emp.UUID)
+	empMap, err := t.repo.FindById(ctx, emp.UUID)
 	if err != nil {
 		return err
 	}
 
 	//TODO somehow implement ctx
-	return empMap.Traverse(f)
+	return empMap.Traverse(ctx, f)
 }
 
 func (t *TreeRepo) Json(ctx context.Context, empID string) (string, error) {
-	emp, err := t.repo.FindById(empID)
+	emp, err := t.repo.FindById(ctx, empID)
 	if err != nil {
 		return "", err
 	}
